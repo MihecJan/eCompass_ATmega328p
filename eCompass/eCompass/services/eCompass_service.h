@@ -4,6 +4,9 @@
 
 #include <stdint.h>
 
+
+
+/* Defines */
 #define MAG_HARD_CALIB_TIME_MS		10000
 #define MAG_HARD_CALIB_PERIOD_MS	20	// ~50 Hz
 
@@ -11,6 +14,9 @@
 
 #define DECL_STEP 50
 
+
+
+/* typedef */
 typedef enum {
 	MAG_OFFSET_PROFILE_AUTO = 0,
 	MAG_OFFSET_PROFILE_MANUAL,
@@ -30,18 +36,31 @@ typedef struct {
 
 typedef void (*mag_status_cb_t)(const char *msg);
 
+
+
+/* Variables */
 int16_t declination100;
 
+
+
+/* Function definitions*/
+
+// Called by higher layer to give this service a callback function for reporting messages
 void mag_calib_register_status_cb(mag_status_cb_t cb);
 
+// Inits declination and magnetometer offsets (read from EEPROM)
 void eCompass_params_init();
 
 void increment_declination();
 void decrement_declination();
 
+// Calculates magnetic azimuth (degrees * 100)
 uint8_t eCompass_mag_azimuth(int32_t *psi_out);
+
+// From magnetic azimuth calculate true azimuth (degrees * 100)
 uint8_t eCompass_true_from_mag(int32_t psi, int32_t *true_out);
 
+// Blocking calibration process. Uses callback function to report messages
 void mag_hardiron_calibration_run(void);
 
 void mag_set_offset(mag_offset_profile_t profile, int16_t x, int16_t y, int16_t z);
@@ -54,8 +73,10 @@ void mag_get_offsetX(mag_offset_profile_t profile, int16_t *outX);
 void mag_get_offsetY(mag_offset_profile_t profile, int16_t *outY);
 void mag_get_offsetZ(mag_offset_profile_t profile, int16_t *outZ);
 
+// Writes offsets into magnetometer sensor
 uint8_t mag_apply_offset(mag_offset_profile_t profile);
 
+// Converts raw magnetometer data into micro teslas
 int16_t LSB_to_micro_tesla(int16_t LSB);
 
 int16_t get_approx_total_field();

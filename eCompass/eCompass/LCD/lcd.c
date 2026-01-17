@@ -12,6 +12,7 @@
 #include "services/eCompass_service.h"
 
 u8g2_t u8g2;
+u8g2_t u8g2_UART;
 
 static void draw_state(const char *state);
 static void draw_compass(int16_t deg);
@@ -104,10 +105,10 @@ uint8_t u8x8_gpio_and_delay (u8x8_t * u8x8, uint8_t msg, uint8_t arg_int, void *
 	return 1;
 }
 
-void init_graphics()
+void LCD_init_UART()
 {
 	u8g2_Setup_st7565_nhd_c12864_1(
-		&u8g2,
+		&u8g2_UART,
 		U8G2_R0,
 		u8x8_byte_uart,
 		u8x8_gpio_and_delay_dummy
@@ -117,7 +118,7 @@ void init_graphics()
 	u8g2_SetPowerSave(&u8g2, 0);
 }
 
-void init_graphic_LCD()
+void LCD_init()
 {	
 	u8g2_Setup_st7565_erc12864_1(
 		&u8g2,
@@ -131,7 +132,7 @@ void init_graphic_LCD()
 	u8g2_SetPowerSave(&u8g2, 0);
 }
 
-void lcd_draw_state_auto_calibration(int16_t true_azimuth_deg)
+void LCD_draw_state_auto_calibration(int16_t true_azimuth_deg)
 {
 	u8g2_FirstPage(&u8g2);
 	do
@@ -168,7 +169,7 @@ void lcd_draw_state_auto_calibration(int16_t true_azimuth_deg)
 	while (u8g2_NextPage(&u8g2));
 }
 
-void lcd_draw_state_calibrating(int16_t mag_off[3])
+void LCD_draw_state_calibrating(int16_t mag_off[3])
 {
 	u8g2_FirstPage(&u8g2);
 	do
@@ -188,7 +189,7 @@ void lcd_draw_state_calibrating(int16_t mag_off[3])
 	while (u8g2_NextPage(&u8g2));
 }
 
-void lcd_draw_state_manual_calibration(int16_t true_azimuth_deg)
+void LCD_draw_state_manual_calibration(int16_t true_azimuth_deg)
 {
 	u8g2_FirstPage(&u8g2);
 	do
@@ -225,7 +226,7 @@ void lcd_draw_state_manual_calibration(int16_t true_azimuth_deg)
 	while (u8g2_NextPage(&u8g2));
 }
 
-void lcd_draw_state_X_offset(int16_t manual_offsetX, int16_t manual_offsetY, int16_t manual_offsetZ)
+void LCD_draw_state_X_offset(int16_t manual_offsetX, int16_t manual_offsetY, int16_t manual_offsetZ)
 {
 	u8g2_FirstPage(&u8g2);
 	do
@@ -247,7 +248,7 @@ void lcd_draw_state_X_offset(int16_t manual_offsetX, int16_t manual_offsetY, int
 	while (u8g2_NextPage(&u8g2));
 }
 
-void lcd_draw_state_Y_offset(int16_t manual_offsetX, int16_t manual_offsetY, int16_t manual_offsetZ)
+void LCD_draw_state_Y_offset(int16_t manual_offsetX, int16_t manual_offsetY, int16_t manual_offsetZ)
 {
 	u8g2_FirstPage(&u8g2);
 	do
@@ -269,7 +270,7 @@ void lcd_draw_state_Y_offset(int16_t manual_offsetX, int16_t manual_offsetY, int
 	while (u8g2_NextPage(&u8g2));
 }
 
-void lcd_draw_state_Z_offset(int16_t manual_offsetX, int16_t manual_offsetY, int16_t manual_offsetZ)
+void LCD_draw_state_Z_offset(int16_t manual_offsetX, int16_t manual_offsetY, int16_t manual_offsetZ)
 {
 	u8g2_FirstPage(&u8g2);
 	do
@@ -291,7 +292,7 @@ void lcd_draw_state_Z_offset(int16_t manual_offsetX, int16_t manual_offsetY, int
 	while (u8g2_NextPage(&u8g2));
 }
 
-void lcd_draw_state_declination(int16_t declination)
+void LCD_draw_state_declination(int16_t declination)
 {
 	u8g2_FirstPage(&u8g2);
 	do

@@ -5,13 +5,14 @@
 #include <avr/eeprom.h>
 #include <string.h>
 
+#include "globals.h"
 #include "eCompass_service.h"
 #include "drivers/lsm303agr.h"
-#include "math/mag_calibration.h"
 #include "utils/utils.h"
-#include "globals.h"
+#include "math/mag_calibration.h"
 #include "math/tiltcomp.h"
-#include "lcd.h"
+#include "math/util.h"
+#include "LCD/lcd.h"
 
 #include  "services/uart_service.h"
 
@@ -22,7 +23,6 @@ mag_eeprom_t EEMEM mag_eeprom;
 
 // ram
 static mag_offset_t mag_offsets[MAG_OFFSET_PROFILE_COUNT];
-int16_t declination100 = 450;
 
 void mag_calib_register_status_cb(mag_status_cb_t cb)
 {
@@ -111,26 +111,6 @@ uint8_t eCompass_true_from_mag(int32_t psi, int32_t *true_out)
 	return 0;
 }
 
-uint8_t eCompass_angles(int16_t *phi_out, int16_t *the_out, int16_t *psi_out)
-{
-	if (!psi_out) return 1;
-	
-	int16_t acc[3];
-	int16_t mag[3];
-	
-	LSM303AGR_read_acc_unshifted(acc);
-	LSM303AGR_read_mag(mag);
-	
-	// NED: iecompass(magX, magY, magZ, accX, accY, accZ);
-	iecompass(-mag[0], mag[1], -mag[2], acc[1], -acc[1], acc[2]);
-	
-	*phi_out = get_phi();
-	*the_out = get_the();
-	*psi_out = get_psi();
-	
-	return 0;
-}
-
 void mag_hardiron_calibration_run(void)
 {
 	/* reset offset in sensor */
@@ -165,7 +145,7 @@ void mag_hardiron_calibration_run(void)
 		
 		if (i % 10 == 0)
 		{
-			lcd_draw_state_calibrating(mag_off);
+			LCD_draw_state_calibrating(mag_off);
 		}
 
 		_delay_ms(MAG_HARD_CALIB_PERIOD_MS);
@@ -189,11 +169,6 @@ void mag_hardiron_calibration_run(void)
 
 	mag_apply_offset(MAG_OFFSET_PROFILE_AUTO);
 	status_cb("Using profile AUTO\n\r");
-}
-
-int16_t LSB_to_micro_tesla(int16_t LSB)
-{
-	return ((int32_t)LSB * 15) / 100;
 }
 
 void mag_set_offset(mag_offset_profile_t profile, int16_t x, int16_t y, int16_t z)
@@ -284,46 +259,44 @@ uint8_t mag_apply_offset(mag_offset_profile_t profile)
 	);
 }
 
+int16_t LSB_to_micro_tesla(int16_t LSB)
+{
+	return ((int32_t)LSB * 15) / 100;
+}
+
+
 int16_t get_approx_total_field()
 {
 	int16_t mag[3];
 	LSM303AGR_read_mag(mag);
 	
-	if (mag[0] < 0) mag[0] = -mag[0];
-	if (mag[1] < 0) mag[1] = -mag[1];
-	if (mag[2] < 0) mag[2] = -mag[2];
+	return MATH_get_approx_total_field(mag);
+}
+
+
+
+
+
+
+
+
+
+uint8_t eCompass_angles(int16_t *phi_out, int16_t *the_out, int16_t *psi_out)
+{
+	if (!psi_out) return 1;
 	
-	if (mag[0] > mag[1] && mag[0] > mag[2])
-	{
-		if (mag[1] > mag[2])
-		{
-			return mag[0] + 0.5 * mag[1] + 0.25 * mag[2];
-		}
-		else
-		{
-			return mag[0] + 0.5 * mag[2] + 0.25 * mag[1];
-		}
-	}
-	else if (mag[1] > mag[2])
-	{
-		if (mag[0] > mag[2])
-		{
-			return mag[1] + 0.5 * mag[0] + 0.25 * mag[2];
-		}
-		else
-		{
-			return mag[1] + 0.5 * mag[2] + 0.25 * mag[0];
-		}
-	}
-	else
-	{
-		if (mag[0] > mag[1])
-		{
-			return mag[2] + 0.5 * mag[0] + 0.25 * mag[1];
-		}
-		else
-		{
-			return mag[2] + 0.5 * mag[1] + 0.25 * mag[0];
-		}
-	}
+	int16_t acc[3];
+	int16_t mag[3];
+	
+	LSM303AGR_read_acc_unshifted(acc);
+	LSM303AGR_read_mag(mag);
+	
+	// NED: iecompass(magX, magY, magZ, accX, accY, accZ);
+	iecompass(-mag[0], mag[1], -mag[2], acc[1], -acc[1], acc[2]);
+	
+	*phi_out = get_phi();
+	*the_out = get_the();
+	*psi_out = get_psi();
+	
+	return 0;
 }

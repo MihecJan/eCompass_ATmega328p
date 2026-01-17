@@ -5,8 +5,9 @@
 #include <util/delay.h>
 #include <stdio.h>
 
-#include "globals.h"
 //#include "cli/cli.h"
+
+#include "globals.h"
 #include "services/uart_service.h"
 #include "services/eCompass_service.h"
 #include "services/button_service.h"
@@ -15,8 +16,9 @@
 #include "state/state_machine.h"
 #include "utils/led.h"
 #include "utils/utils.h"
+//#include "drivers/lsm303agr.h"
 #include "drivers/lsm303agr.h"
-#include "lcd.h"
+#include "LCD/lcd.h"
 
 #include "hal/spi/spi_hal.h"
 
@@ -72,7 +74,7 @@ void app_process()
 			snprintf(buff, sizeof(buff), "True azimuth: %4d.%02d deg\r\n", true_azimuth_deg, true_azimuth_rem);
 			uart_send_string(buff);
 			
-			lcd_draw_state_auto_calibration(true_azimuth_deg);
+			LCD_draw_state_auto_calibration(true_azimuth_deg);
 			break;
 				
 		case STATE_CALIBRATING:
@@ -91,7 +93,7 @@ void app_process()
 			if (true_azimuth100 < 0) true_azimuth100 = -true_azimuth100;
 			true_azimuth_rem = true_azimuth100 % 100;
 			
-			lcd_draw_state_manual_calibration(true_azimuth_deg);
+			LCD_draw_state_manual_calibration(true_azimuth_deg);
 			break;
 				
 		case STATE_OFFSET_X:
@@ -113,7 +115,7 @@ void app_process()
 			snprintf(buff, sizeof(buff), "X offset: %d\n\r", manual_offset[0]);
 			uart_send_string(buff);
 			
-			lcd_draw_state_X_offset(manual_offset[0], manual_offset[1], manual_offset[2]);
+			LCD_draw_state_X_offset(manual_offset[0], manual_offset[1], manual_offset[2]);
 			break;
 				
 		case STATE_OFFSET_Y:
@@ -135,7 +137,7 @@ void app_process()
 			snprintf(buff, sizeof(buff), "Y offset: %d\n\r", manual_offset[1]);
 			uart_send_string(buff);
 			
-			lcd_draw_state_Y_offset(manual_offset[0], manual_offset[1], manual_offset[2]);
+			LCD_draw_state_Y_offset(manual_offset[0], manual_offset[1], manual_offset[2]);
 			break;
 				
 		case STATE_OFFSET_Z:
@@ -157,7 +159,7 @@ void app_process()
 			snprintf(buff, sizeof(buff), "Z offset: %d\n\r", manual_offset[2]);
 			uart_send_string(buff);
 			
-			lcd_draw_state_Z_offset(manual_offset[0], manual_offset[1], manual_offset[2]);
+			LCD_draw_state_Z_offset(manual_offset[0], manual_offset[1], manual_offset[2]);
 			break;
 				
 		case STATE_DECLINATION:
@@ -175,7 +177,7 @@ void app_process()
 				decrement_declination();
 			}
 			
-			lcd_draw_state_declination(declination100);
+			LCD_draw_state_declination(declination100);
 			break;
 			
 		case STATE_MOTION_CAL:
@@ -222,7 +224,7 @@ void init()
 	spi_init();
 	uart_send_string("Initialized SPI\n\r");
 	
-	init_graphic_LCD();
+	LCD_init();
 	uart_send_string("Initialized graphic LCD\n\r");
 
 	 _delay_ms(10);

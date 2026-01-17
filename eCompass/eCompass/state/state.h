@@ -17,7 +17,5 @@ typedef enum {
 
 system_state_t state_get(void);
 void state_set(system_state_t s);
-const char *state_to_str(system_state_t s);
-
 
 #endif /* STATE_H_ */
