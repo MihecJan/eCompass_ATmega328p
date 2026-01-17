@@ -120,6 +120,8 @@ void mag_hardiron_calibration_run(void)
 		status_cb("Failed to reset offset\r\n");
 		return;
 	}
+	
+	_delay_ms(100);
 		
 	status_cb("Premikaj tipalo v vse smeri za 10 sekund...\r\n");
 		
@@ -128,6 +130,10 @@ void mag_hardiron_calibration_run(void)
 	uint32_t elapsed = 0;
 	int16_t mag[3];
 	int16_t mag_off[3];
+	
+	// Dummy read
+	LSM303AGR_read_mag(mag);
+	_delay_ms(100);
 	
 	uint16_t i = 0;
 	while (elapsed < MAG_HARD_CALIB_TIME_MS)

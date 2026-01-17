@@ -10,9 +10,10 @@
 #include "drivers/lsm303agr.h"
 #include "math/sin.h"
 #include "services/eCompass_service.h"
+#include "utils/led.h"
+#include "state/state.h"
 
 u8g2_t u8g2;
-u8g2_t u8g2_UART;
 
 static void draw_state(const char *state);
 static void draw_compass(int16_t deg);
@@ -27,8 +28,8 @@ void *arg_ptr)
 	switch (msg)
 	{
 		case U8X8_MSG_BYTE_START_TRANSFER:
-		uart_send_byte(0xAA);
-		break;
+			uart_send_byte(0xAA);
+			break;
 		
 		case U8X8_MSG_BYTE_SEND:
 		{
@@ -41,8 +42,8 @@ void *arg_ptr)
 		}
 		
 		case U8X8_MSG_BYTE_END_TRANSFER:
-		uart_send_byte(0x55);
-		break;
+			uart_send_byte(0x55);
+			break;
 	}
 	
 	return 1;
@@ -54,7 +55,7 @@ uint8_t u8x8_gpio_and_delay_dummy(
 	uint8_t arg_int,
 	void *arg_ptr)
 {
-	return 1;
+    return 1;
 }
 
 uint8_t u8x8_gpio_and_delay (u8x8_t * u8x8, uint8_t msg, uint8_t arg_int, void *arg_ptr) {
@@ -105,27 +106,116 @@ uint8_t u8x8_gpio_and_delay (u8x8_t * u8x8, uint8_t msg, uint8_t arg_int, void *
 	return 1;
 }
 
-void LCD_init_UART()
+uint8_t u8x8_byte_avr_hw_spi_and_uart (u8x8_t * u8x8, uint8_t msg, uint8_t arg_int, void *arg_ptr)
 {
-	u8g2_Setup_st7565_nhd_c12864_1(
-		&u8g2_UART,
-		U8G2_R0,
-		u8x8_byte_uart,
-		u8x8_gpio_and_delay_dummy
-	);
+	uint8_t *data;
 	
-	u8g2_InitDisplay(&u8g2);
-	u8g2_SetPowerSave(&u8g2, 0);
+	switch (msg) {
+		case U8X8_MSG_BYTE_INIT:
+		SCK_DDR |= _BV (SCK_BIT);
+		MOSI_DDR |= _BV (MOSI_BIT);
+
+		SPCR = (_BV (SPE) | _BV (MSTR));
+
+		switch (u8x8->display_info->spi_mode) {
+			case 0:
+			break;
+			case 1:
+			SPCR |= _BV (CPHA);
+			break;
+			case 2:
+			SPCR |= _BV (CPOL);
+			break;
+			case 3:
+			SPCR |= _BV (CPOL);
+			SPCR |= _BV (CPHA);
+			break;
+		};
+
+		switch (F_CPU / u8x8->display_info->sck_clock_hz)
+		{
+			case 2:
+			SPSR |= _BV (SPI2X);
+			break;
+			case 4:
+			break;
+			case 8:
+			SPSR |= _BV (SPI2X);
+			SPCR |= _BV (SPR0);
+			break;
+			case 16:
+			SPCR |= _BV (SPR0);
+			break;
+			case 32:
+			SPSR |= _BV (SPI2X);
+			SPCR |= _BV (SPR1);
+			break;
+			case 64:
+			SPCR |= _BV (SPR1);
+			break;
+			case 128:
+			SPCR |= _BV (SPR1);
+			SPCR |= _BV (SPR0);
+			break;
+		}
+
+		u8x8_gpio_SetCS(u8x8, u8x8->display_info->chip_disable_level);
+		break;
+		case U8X8_MSG_BYTE_SET_DC:
+			u8x8_gpio_SetDC(u8x8, arg_int);
+			break;
+		case U8X8_MSG_BYTE_START_TRANSFER:
+			u8x8_gpio_SetCS(u8x8, u8x8->display_info->chip_enable_level);
+			u8x8->gpio_and_delay_cb(u8x8, U8X8_MSG_DELAY_NANO, u8x8->display_info->post_chip_enable_wait_ns, NULL);
+			
+			uart_send_byte(0xAA);
+			
+			break;
+		case U8X8_MSG_BYTE_SEND:
+			data = (uint8_t *) arg_ptr;
+			while (arg_int > 0)
+			{
+				SPDR = (uint8_t) * data;
+				while (!(SPSR & _BV (SPIF)));
+				
+				uart_send_byte(*data);
+
+				data++;
+				arg_int--;
+			}			
+			break;
+		case U8X8_MSG_BYTE_END_TRANSFER:
+			u8x8->gpio_and_delay_cb(u8x8, U8X8_MSG_DELAY_NANO, u8x8->display_info->pre_chip_disable_wait_ns, NULL);
+			u8x8_gpio_SetCS(u8x8, u8x8->display_info->chip_disable_level);
+			
+			uart_send_byte(0x55);
+			
+			break;
+		
+		default:
+			return 0;
+	}
+	
+	return 1;
 }
 
 void LCD_init()
 {	
+	#ifdef SEND_GRAPHIC_UART
 	u8g2_Setup_st7565_erc12864_1(
+		&u8g2,
+		U8G2_R0,
+		u8x8_byte_avr_hw_spi_and_uart,
+		u8x8_gpio_and_delay
+	);
+	#else
+		u8g2_Setup_st7565_erc12864_1(
 		&u8g2,
 		U8G2_R0,
 		u8x8_byte_avr_hw_spi,
 		u8x8_gpio_and_delay
-	);
+		);
+	#endif
 	
 	u8g2_InitDisplay(&u8g2);
 	u8g2_SetContrast(&u8g2, 16);
@@ -134,6 +224,11 @@ void LCD_init()
 
 void LCD_draw_state_auto_calibration(int16_t true_azimuth_deg)
 {
+	#ifdef SEND_GRAPHIC_UART
+		uart_send_byte(0x02);
+		uart_send_byte(0x02);
+	#endif
+		
 	u8g2_FirstPage(&u8g2);
 	do
 	{
@@ -171,6 +266,11 @@ void LCD_draw_state_auto_calibration(int16_t true_azimuth_deg)
 
 void LCD_draw_state_calibrating(int16_t mag_off[3])
 {
+	#ifdef SEND_GRAPHIC_UART
+		uart_send_byte(0x02);
+		uart_send_byte(0x02);
+	#endif
+		
 	u8g2_FirstPage(&u8g2);
 	do
 	{
@@ -191,6 +291,11 @@ void LCD_draw_state_calibrating(int16_t mag_off[3])
 
 void LCD_draw_state_manual_calibration(int16_t true_azimuth_deg)
 {
+	#ifdef SEND_GRAPHIC_UART
+		uart_send_byte(0x02);
+		uart_send_byte(0x02);
+	#endif
+	
 	u8g2_FirstPage(&u8g2);
 	do
 	{
@@ -228,6 +333,11 @@ void LCD_draw_state_manual_calibration(int16_t true_azimuth_deg)
 
 void LCD_draw_state_X_offset(int16_t manual_offsetX, int16_t manual_offsetY, int16_t manual_offsetZ)
 {
+	#ifdef SEND_GRAPHIC_UART
+		uart_send_byte(0x02);
+		uart_send_byte(0x02);
+	#endif
+	
 	u8g2_FirstPage(&u8g2);
 	do
 	{
@@ -250,6 +360,11 @@ void LCD_draw_state_X_offset(int16_t manual_offsetX, int16_t manual_offsetY, int
 
 void LCD_draw_state_Y_offset(int16_t manual_offsetX, int16_t manual_offsetY, int16_t manual_offsetZ)
 {
+	#ifdef SEND_GRAPHIC_UART
+		uart_send_byte(0x02);
+		uart_send_byte(0x02);
+	#endif
+	
 	u8g2_FirstPage(&u8g2);
 	do
 	{
@@ -272,6 +387,11 @@ void LCD_draw_state_Y_offset(int16_t manual_offsetX, int16_t manual_offsetY, int
 
 void LCD_draw_state_Z_offset(int16_t manual_offsetX, int16_t manual_offsetY, int16_t manual_offsetZ)
 {
+	#ifdef SEND_GRAPHIC_UART
+		uart_send_byte(0x02);
+		uart_send_byte(0x02);
+	#endif
+	
 	u8g2_FirstPage(&u8g2);
 	do
 	{
@@ -294,6 +414,11 @@ void LCD_draw_state_Z_offset(int16_t manual_offsetX, int16_t manual_offsetY, int
 
 void LCD_draw_state_declination(int16_t declination)
 {
+	#ifdef SEND_GRAPHIC_UART
+		uart_send_byte(0x02);
+		uart_send_byte(0x02);
+	#endif
+		
 	u8g2_FirstPage(&u8g2);
 	do
 	{
@@ -380,25 +505,16 @@ static void draw_compass(int16_t deg)
 
 void draw_test(void)
 {
+	#ifdef SEND_GRAPHIC_UART
+		uart_send_byte(0x02);
+		uart_send_byte(0x02);
+	#endif
+	
 	u8g2_FirstPage(&u8g2);
 	do
 	{
-		u8g2_SetFont(&u8g2, u8g2_font_6x10_tf);
-		u8g2_SetFontDirection(&u8g2, 0);
-		u8g2_DrawStr(&u8g2, 19, 12, "128 px");
-		u8g2_SetFontDirection(&u8g2, 1);
-		u8g2_DrawStr(&u8g2, 5, 18, "64 px");
-		
-		u8g2_DrawHLine(&u8g2, 2, 2, 80);
-		u8g2_DrawLine(&u8g2, 82, 2, 78, 0);
-		u8g2_DrawLine(&u8g2, 82, 2, 78, 4);
-		
-		u8g2_DrawVLine(&u8g2, 2, 2, 60);
-		u8g2_DrawLine(&u8g2, 2, 62, 0, 58);
-		u8g2_DrawLine(&u8g2, 2, 62, 4, 58);
-
-
-		//u8g2_DrawFrame(&u8g2, 0, 16, 128, 48);
+		u8g2_SetFont(&u8g2, u8g2_font_5x8_tf);
+		u8g2_DrawStr(&u8g2, 0, 16, "test");
 	}
 	while (u8g2_NextPage(&u8g2));
 }

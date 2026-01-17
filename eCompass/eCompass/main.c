@@ -32,15 +32,22 @@ void uart_print_cb(const char *msg);
 void mag_azimuth();
 
 int main(void)
-{
+{			
 	button_hal_init();
 	init();
+
+	//draw_test();
+	//
+	//while (1)
+	//{
+		//_delay_ms(100);
+	//}
 				
     while (1)
     {
 	    app_process();
 	    
-	    _delay_ms(100);
+	    _delay_ms(1);
     }
 }
 
@@ -204,7 +211,7 @@ void init()
 	
 	uart_rx_init();
 	
-	uart_init(115200);
+	uart_init(250000);
 
 	sei();
 	
@@ -225,6 +232,7 @@ void init()
 	uart_send_string("Initialized SPI\n\r");
 	
 	LCD_init();
+	
 	uart_send_string("Initialized graphic LCD\n\r");
 
 	 _delay_ms(10);
@@ -242,7 +250,7 @@ void init()
 	 uart_send_string("LSM303AGR initialized:\n\r");
 	 
 	 //uart_send_string("\tMagnetometer\n\r");
-//
+	 //
 	 //uint8_t mag_odr_hz;
 	 //err = LSM303AGR_get_odr_mag_hz(&mag_odr_hz);
 	 //report_uint16(err, "\t", "ODR", (uint16_t)mag_odr_hz, "Hz");
@@ -259,7 +267,7 @@ void init()
 	 //err = LSM303AGR_get_lowpass_filter_mag(&lp_filter);
 	 //char *lp_filter_str = lp_filter == 0 ? "Disabled" : "Enabled";
 	 //report(err, "\t", "Low-pass filter", lp_filter_str, NULL);
-//
+	//
 	 //uint8_t offset_canc;
 	 //err = LSM303AGR_get_offset_canc_mag(&offset_canc);
 	 //char *offset_canc_str = offset_canc == 0 ? "Disabled" : "Enabled";
@@ -267,7 +275,7 @@ void init()
 	 //
 	 //uart_send_string("\n\r");
 	 //uart_send_string("\tAccelerometer\n\r");
-//
+	 //
 	 //uint16_t acc_odr_hz;
 	 //err = LSM303AGR_get_odr_acc_hz(&acc_odr_hz);
 	 //report_uint16(err, "\t", "ODR", acc_odr_hz, "Hz");

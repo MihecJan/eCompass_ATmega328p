@@ -24,5 +24,7 @@ void LCD_draw_state_Y_offset(int16_t manual_offsetX, int16_t manual_offsetY, int
 void LCD_draw_state_Z_offset(int16_t manual_offsetX, int16_t manual_offsetY, int16_t manual_offsetZ);
 void LCD_draw_state_declination();
 
+void draw_test();
+
 
 #endif /* LCD_H_ */

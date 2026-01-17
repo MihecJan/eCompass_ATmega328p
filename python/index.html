@@ -1,0 +1,58 @@
+<!DOCTYPE html>
+<html>
+<head>
+<meta charset="utf-8">
+<title>LCD Mirror</title>
+<style>
+    body {
+        background: #12563c;
+        color: white;
+        display: flex;
+        justify-content: center;
+        align-items: center;
+        height: 100vh;
+        margin: 0;
+    }
+
+    #lcd_outer_wrapper {
+        width: 1400px;
+        height: 700px;
+        background-color: #353e41;
+        margin: auto;
+        position: relative;
+        border: 4px solid #8c9ea3;
+    }
+
+    #lcd_inner_wrapper {
+        width: 1380px;
+        height: 680px;
+        background-color: #8c9ea3;
+        position: absolute;
+        left: 50%;
+        top: 50%;
+        transform: translate(-50%, -50%);
+        border: 5px solid #8c9ea3;
+        border-radius: 20px;
+        box-sizing: border-box;
+    }
+
+    canvas {
+        image-rendering: pixelated;
+        position: absolute;
+        left: 50%;
+        top: 50%;
+        transform: translate(-50%, -50%);
+    }
+</style>
+</head>
+<body>
+
+<div id="lcd_outer_wrapper">
+    <div id="lcd_inner_wrapper">
+        <canvas id="lcd"></canvas>
+    </div>
+</div>
+
+<script src="lcd.js"></script>
+</body>
+</html>

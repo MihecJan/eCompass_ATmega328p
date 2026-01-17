@@ -2,6 +2,8 @@
 #define STATE_H_
 
 
+#define SEND_GRAPHIC_UART
+
 #include <stdint.h>
 
 typedef enum {
