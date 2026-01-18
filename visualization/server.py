@@ -75,18 +75,22 @@ def uart_reader():
     
 
 async def ws_handler(websocket):
+    print(f"Client connected: {websocket.remote_address}")
     clients.add(websocket)
+
     try:
         while True:
             if latest_frame:
                 await websocket.send(latest_frame)
             await asyncio.sleep(0.05)  # ~20 FPS max
     finally:
+        print(f"Client disconnected: {websocket.remote_address}")
         clients.remove(websocket)
 
 
 async def main():
     async with websockets.serve(ws_handler, "localhost", 8765):
+        print("Server started on ws://localhost:8765")
         await asyncio.Future()  # run forever
 
 

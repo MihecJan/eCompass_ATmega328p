@@ -8,6 +8,7 @@
         background: #12563c;
         color: white;
         display: flex;
+        flex-direction: column;
         justify-content: center;
         align-items: center;
         height: 100vh;
@@ -43,9 +44,35 @@
         top: 50%;
         transform: translate(-50%, -50%);
     }
+
+    p {
+        font-size: 16px;
+        margin: 0;
+    }
+
+    #connection_status {
+        font-weight: bold;
+        text-transform: capitalize;
+    }
+
+    .rounded_box {
+        background-color: rgb(175, 187, 183);
+        color: rgb(29, 29, 29);
+        padding: 2px 10px;
+        border-radius: 4px;
+        position: absolute;
+        top: 1vh;
+        left: 1vh;
+        z-index: 100;
+        opacity: 0.6;
+    }
 </style>
 </head>
 <body>
+
+<div class="rounded_box">
+    <p>Status: <span id="connection_status">Connecting...</span></p>
+</div>
 
 <div id="lcd_outer_wrapper">
     <div id="lcd_inner_wrapper">

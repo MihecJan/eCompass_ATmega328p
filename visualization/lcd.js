@@ -13,6 +13,9 @@ ws.binaryType = "arraybuffer";
 
 ws.onopen = () => {
     console.log("WebSocket connected");
+    const statusElement = document.getElementById("connection_status");
+    statusElement.innerText = "connected";
+    statusElement.style.color = "#2dff37";
 };
 
 ws.onerror = (err) => {
@@ -21,6 +24,9 @@ ws.onerror = (err) => {
 
 ws.onclose = () => {
     console.error("WebSocket closed");
+    const statusElement = document.getElementById("connection_status");
+    statusElement.innerText = "disconnected";
+    statusElement.style.color = "#8a2020";
 };
 
 ws.onmessage = (event) => {
